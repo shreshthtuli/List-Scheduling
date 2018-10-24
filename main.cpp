@@ -39,8 +39,7 @@ SOFTWARE.
 using namespace boost;
 using namespace std;
 
-class Node
-{
+class Node{
     public:
     char type;
     int start, id;
@@ -294,6 +293,24 @@ void parseGraph(Graph &graph, string file){
         add_edge_by_label(ss.str(), ss1.str(), graph);
     }
 
+    if(file == "graph2.txt"){
+        graphFile.close();
+        return;
+    }
+    V.push_back("C0");
+    add_vertex("C0", graph);
+    AdjGraph& underlying = graph.graph();
+    typedef property_map<Graph, vertex_index_t>::type IndexMap;
+    IndexMap index = get(vertex_index, underlying);
+
+    pair<vertex_iter, vertex_iter> vp;
+    for (vp = vertices(underlying); vp.first != vp.second; ++vp.first) {
+        if((int)out_degree(*vp.first, underlying) == 0 && V.at((int)index[*vp.first]) != "C0"){
+            E.push_back(pair<string,string>( V.at((int)index[*vp.first]), "C0"));
+            add_edge_by_label(V.at((int)index[*vp.first]), "C0", graph);
+        }
+    }
+
     // printGraph();
     graphFile.close();
 }
@@ -379,7 +396,7 @@ bool removeVertices(Graph& gr, vector<string> remove){
         remove.begin(), remove.end(),
         std::back_inserter( difference )
     );
-    V = difference; cout << V.size() << endl;
+    V = difference; 
     for(int i = 0; i < remove.size(); i++){
         cout << remove.at(i) << " ";
         gr.remove_vertex(remove.at(i));        
