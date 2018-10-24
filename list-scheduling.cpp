@@ -30,45 +30,10 @@ SOFTWARE.
 #include <deque>
 #include <string>
 #include <algorithm>
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/labeled_graph.hpp>
-#include <boost/graph/copy.hpp>
-#include <boost/graph/graph_utility.hpp>
+#include "./list-scheduling.hpp"
 
 using namespace boost;
 using namespace std;
-
-class Node{
-    public:
-    char type;
-    int start, id;
-
-    Node(){};
-    Node(char t, int idn){type = t; id = idn;}
-};
-
-typedef labeled_graph<adjacency_list<listS, vecS, bidirectionalS, Node>, string> Graph;
-typedef adjacency_list<listS, vecS, bidirectionalS, Node> AdjGraph;
-typedef graph_traits<Graph>::vertex_descriptor vertex_t;
-typedef graph_traits<Graph>::vertex_iterator vertex_iter;
-typedef graph_traits<Graph>::edge_descriptor edge_t;
-typedef graph_traits<Graph>::edge_iterator edge_iter;
-typedef graph_traits<Graph>::in_edge_iterator in_edge_iter;
-typedef graph_traits<Graph>::out_edge_iterator out_edge_iter;
-
-map <char, int> delay;
-map <char, int> quantity;
-map <string, int> asap;
-map <string, int> alap;
-map <string, int> mobility;
-map <string, int> schedule;
-map <string, int> resource_num;
-int critical_path_length = 1;
-int last_cycle = 1;
-vector <string> V;
-vector <pair<string,string>> E;
-Graph g;
 
 void ASAP(Graph& g){
     vector <string> Vtemp = V;
@@ -331,12 +296,6 @@ void parseInput(){
 
     input.close();
 }
-
-struct mobilityComparator{
-    bool operator ()(const string s, const string s1){
-        return mobility.at(s) < mobility.at(s1);
-    }
-};
 
 vector<string> readyList(Graph& gr, char type){
     // cout << "ready list for " << type << endl;
