@@ -61,6 +61,8 @@ map <char, int> delay;
 map <char, int> quantity;
 map <string, int> asap;
 map <string, int> alap;
+map <string, int> mobility;
+map <string, int> schedule;
 int critical_path_length = 1;
 vector <string> V;
 vector <pair<string,string>> E;
@@ -186,6 +188,13 @@ void printALAP(){
     }
 }
 
+void computeMobilities(){
+    for(int i = 0; i < V.size(); i++){
+        string v = V.at(i);
+        mobility.insert(pair <string,int> (v, alap.at(v) - asap.at(v)));
+    }
+}
+
 void printVertices(){
     for(int i = 0; i < V.size(); i++)
         cout << V.at(i) << endl;
@@ -271,6 +280,10 @@ void parseInput(){
     input.close();
 }
 
+void listSchedule(){
+    
+}
+
 int main(int argc, char** argv){
 
     parseInput();
@@ -279,5 +292,6 @@ int main(int argc, char** argv){
     printASAP();
     ALAP();
     printALAP();
+    computeMobilities();
 
 }
