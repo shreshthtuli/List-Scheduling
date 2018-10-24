@@ -29,6 +29,7 @@ SOFTWARE.
 #include <fstream>
 #include <deque>
 #include <string>
+#include <algorithm>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/labeled_graph.hpp>
@@ -63,6 +64,7 @@ map <string, int> asap;
 map <string, int> alap;
 map <string, int> mobility;
 map <string, int> schedule;
+map <string, int> resource_num;
 int critical_path_length = 1;
 vector <string> V;
 vector <pair<string,string>> E;
@@ -195,6 +197,13 @@ void computeMobilities(){
     }
 }
 
+void printMobilities(){
+    cout << "Printing Mobilities :" << endl;
+    for(int i = 0; i < V.size(); i++){
+        cout << V.at(i) << " : " << mobility.at(V.at(i)) << endl; 
+    }
+}
+
 void printVertices(){
     for(int i = 0; i < V.size(); i++)
         cout << V.at(i) << endl;
@@ -280,8 +289,88 @@ void parseInput(){
     input.close();
 }
 
+struct mobilityComparator{
+    bool operator ()(const string s, const string s1){
+        return mobility.at(s) < mobility.at(s1);
+    }
+};
+
+vector<string> readyList(Graph& gr, char type){
+    list<string> list;
+
+    AdjGraph& underlying = gr.graph();
+    typedef property_map<Graph, vertex_index_t>::type IndexMap;
+    IndexMap index = get(vertex_index, underlying);
+
+    pair<vertex_iter, vertex_iter> vp;
+    for (vp = vertices(underlying); vp.first != vp.second; ++vp.first) {
+        bool scheduled = schedule.find(V.at((int)index[*vp.first])) != schedule.end();
+        if(scheduled)
+            continue;
+        if((int)in_degree(*vp.first, underlying) == 0 && V.at((int)index[*vp.first]).at(0) == type){
+            list.push_back(V.at((int)index[*vp.first]));
+        }
+    }
+
+    list.sort(mobilityComparator());
+    vector<string> v{list.begin(), list.end()};
+    return v;
+}
+
+vector<string> listScheduleHelper(Graph& gcopy, char a, int cycle){
+    vector<string> ready = readyList(gcopy, a);
+    vector<string> selected;
+
+    int num_critical = 0;
+    for(int i = 0; i < ready.size(); i++){
+        if(mobility.at(ready.at(i)) == 0)
+            num_critical++;
+    }
+
+    if(num_critical > quantity.at(a))
+        throw "No schedule possible";
+
+    for(int i = 0; i < min(quantity.at(a), (int)ready.size()); i++){
+        resource_num.insert(pair<string,int>(ready.at(i), i));
+        selected.push_back(ready.at(i));
+        schedule.insert(pair<string,int>(ready.at(i), cycle));
+        cout << "Given schedule " << cycle << " to " << ready.at(i) << endl;
+    }
+
+    return selected;
+
+}
+
+void removeVertices(vector<string> remove){
+    for(int i = 0; i < remove.size(); i++){
+        remove_vertex(remove.at(i), g);
+        V.erase(std::remove(V.begin(), V.end(), remove.at(i)), V.end());
+        for(int j = 0; j < E.size(); j++){
+            if(E.at(j).first == remove.at(i) || E.at(j).second == remove.at(i))
+                E.erase(E.begin() + j);
+        }
+    }
+}
+
 void listSchedule(){
-    
+    int cycle = 1;
+    vector<string> remove;
+
+    while(num_vertices(g) != 0){
+        printGraph();
+        ASAP();
+        printASAP();
+        ALAP();
+        printALAP();
+        computeMobilities();
+        remove.clear();
+        for(char a : {'C', 'A', 'S', 'M', 'R', 'W'}){
+            vector<string> r = listScheduleHelper(g, a, cycle);
+            remove.insert(remove.end(), r.begin(), r.end());
+        }
+        removeVertices(remove);
+        cycle++;
+    }    
 }
 
 int main(int argc, char** argv){
@@ -293,5 +382,7 @@ int main(int argc, char** argv){
     ALAP();
     printALAP();
     computeMobilities();
+    printMobilities();
+    listSchedule();
 
 }
