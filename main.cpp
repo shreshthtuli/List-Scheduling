@@ -66,23 +66,24 @@ map <string, int> mobility;
 map <string, int> schedule;
 map <string, int> resource_num;
 int critical_path_length = 1;
+int last_cycle = 1;
 vector <string> V;
 vector <pair<string,string>> E;
 Graph g;
 
-void ASAP(){
+void ASAP(Graph& g){
     vector <string> Vtemp = V;
     Graph temp = g;
     typedef property_map<Graph, vertex_index_t>::type IndexMap;
     IndexMap index = get(vertex_index, temp);
-    // cout << "ASAP : " << endl;
+    cout << "ASAP : " << endl;
 
     pair<vertex_iter, vertex_iter> vp;
     for (vp = vertices(temp); vp.first != vp.second; ++vp.first) {
         if((int)in_degree(*vp.first, temp) == 0){
-            asap.insert(pair <string,int> (V.at((int)index[*vp.first]), 1));
+            asap.insert(pair <string,int> (V.at((int)index[*vp.first]), 1));            
             Vtemp.erase(remove(Vtemp.begin(), Vtemp.end(), V.at((int)index[*vp.first])), Vtemp.end());
-            // cout << "removed : " << V.at((int)index[*vp.first]) << endl;
+            cout << "removed : " << V.at((int)index[*vp.first]) << endl;
         }
     }
 
@@ -96,7 +97,7 @@ void ASAP(){
                 continue;
             bool all_pred_scheduled = true;
             vertex_t v = *vp.first; int maxEnd = 0;
-            // cout << "checking vertex : " << V.at((int)index[*vp.first]) << endl;
+            cout << "checking vertex : " << V.at((int)index[*vp.first]) << endl;
             for(tie(in_i, in_end) = in_edges(v, g); in_i != in_end; ++in_i){
                 e = *in_i;
                 vertex_t src = source(e, g);
@@ -105,7 +106,7 @@ void ASAP(){
                     all_pred_scheduled = false; continue;
                 }
                 int complete_time = asap.at(V.at(i)) + delay.at(V.at(i).at(0));
-                // cout << "pred : " << V.at(i) << " complete at : " << complete_time-1 << endl; 
+                cout << "pred : " << V.at(i) << " complete at : " << complete_time-1 << endl; 
                 maxEnd = max(maxEnd, complete_time);
                 if(complete_time > cycle_num){
                     all_pred_scheduled = false;
@@ -114,7 +115,7 @@ void ASAP(){
             if(all_pred_scheduled){
                 asap.insert(pair <string,int> (V.at((int)index[*vp.first]), maxEnd));
                 Vtemp.erase(remove(Vtemp.begin(), Vtemp.end(), V.at((int)index[*vp.first])), Vtemp.end());
-                // cout << "removed : " << V.at((int)index[*vp.first]) << " = " << maxEnd << endl;
+                cout << "removed : " << V.at((int)index[*vp.first]) << " = " << maxEnd << endl;
                 critical_path_length = max(critical_path_length, maxEnd + delay.at(V.at((int)index[*vp.first]).at(0)));
             }
             cycle_num++;
@@ -123,20 +124,20 @@ void ASAP(){
     
 }
 
-void ALAP(){
+void ALAP(Graph& g){
     vector <string> Vtemp = V;
     Graph temp = g;
     typedef property_map<Graph, vertex_index_t>::type IndexMap;
     IndexMap index = get(vertex_index, temp);
-    // cout << "ALAP : " << endl;
-    // cout << "Critical path length = " << critical_path_length << endl;
+    cout << "ALAP : " << endl;
+    cout << "Critical path length = " << critical_path_length << endl;
 
     pair<vertex_iter, vertex_iter> vp;
     for (vp = vertices(temp); vp.first != vp.second; ++vp.first) {
         if((int)out_degree(*vp.first, temp) == 0){
             alap.insert(pair <string,int> (V.at((int)index[*vp.first]), critical_path_length - delay.at(V.at((int)index[*vp.first]).at(0))));
             Vtemp.erase(remove(Vtemp.begin(), Vtemp.end(), V.at((int)index[*vp.first])), Vtemp.end());
-            // cout << "removed : " << V.at((int)index[*vp.first]) << " = " << critical_path_length - delay.at(V.at((int)index[*vp.first]).at(0)) << endl;
+            cout << "removed : " << V.at((int)index[*vp.first]) << " = " << critical_path_length - delay.at(V.at((int)index[*vp.first]).at(0)) << endl;
         }
     }
 
@@ -150,7 +151,7 @@ void ALAP(){
                 continue;
             bool all_succ_scheduled = true;
             vertex_t v = *vp.first; int minStart;
-            // cout << "checking vertex : " << V.at((int)index[*vp.first]) << endl;
+            cout << "checking vertex : " << V.at((int)index[*vp.first]) << endl;
             for(tie(out_i, out_end) = out_edges(v, g); out_i != out_end; ++out_i){
                 e = *out_i;
                 vertex_t targ = target(e, g);
@@ -160,7 +161,7 @@ void ALAP(){
                 }
                 int start_time = alap.at(V.at(i));
                 minStart = min(minStart, start_time);
-                // cout << "succ : " << V.at(i) << " start at : " << start_time << endl; 
+                cout << "succ : " << V.at(i) << " start at : " << start_time << endl; 
                 if(start_time > cycle_num){
                     all_succ_scheduled = false;
                 }
@@ -168,7 +169,7 @@ void ALAP(){
             if(all_succ_scheduled){
                 alap.insert(pair <string,int> (V.at((int)index[*vp.first]), minStart - delay.at(V.at((int)index[*vp.first]).at(0))));
                 Vtemp.erase(remove(Vtemp.begin(), Vtemp.end(), V.at((int)index[*vp.first])), Vtemp.end());
-                // cout << "removed : " << V.at((int)index[*vp.first]) << " = " << minStart - delay.at(V.at((int)index[*vp.first]).at(0)) << endl;
+                cout << "removed : " << V.at((int)index[*vp.first]) << " = " << minStart - delay.at(V.at((int)index[*vp.first]).at(0)) << endl;
             }
             cycle_num++;
         }
@@ -220,6 +221,25 @@ void printGraph(){
     printEdges();
 }
 
+void printSchedule(){
+    cout << "Node\tCycle\tResource number\n";
+    for(int i = 0; i < V.size(); i++){
+        if(V.at(i).at(0) != 'C')
+            cout << V.at(i) << "\t" << schedule.at(V.at(i)) << "\t" << resource_num.at(V.at(i)) << endl;
+    }
+}
+
+void writeGraph(string file){
+    ofstream output(file);
+    for(int i = 0; i < E.size(); i++){
+        output << E.at(i).first.at(0) << " " << E.at(i).first.at(1) << " " << E.at(i).second.at(0) << " " << E.at(i).second.at(1); 
+        if(i != E.size() - 1)
+            output << endl;
+    }
+    output.flush();
+    output.close();
+}
+
 void printInDegrees(){
     AdjGraph& underlying = g.graph();
     typedef property_map<Graph, vertex_index_t>::type IndexMap;
@@ -236,8 +256,14 @@ void printInDegrees(){
     */
 }
 
-void parseGraph(Graph &graph){
-    ifstream graphFile("graph.txt");
+void parseGraph(Graph &graph, string file){
+    ifstream graphFile(file);
+    V.clear();
+    E.clear();
+    asap.clear();
+    alap.clear();
+    mobility.clear();
+    critical_path_length = 1;
 
     while(!graphFile.eof()){
         vertex_t u, v;
@@ -268,7 +294,7 @@ void parseGraph(Graph &graph){
         add_edge_by_label(ss.str(), ss1.str(), graph);
     }
 
-    printGraph();
+    // printGraph();
     graphFile.close();
 }
 
@@ -296,6 +322,7 @@ struct mobilityComparator{
 };
 
 vector<string> readyList(Graph& gr, char type){
+    // cout << "ready list for " << type << endl;
     list<string> list;
 
     AdjGraph& underlying = gr.graph();
@@ -314,6 +341,7 @@ vector<string> readyList(Graph& gr, char type){
 
     list.sort(mobilityComparator());
     vector<string> v{list.begin(), list.end()};
+    // cout << "ready list done\n";
     return v;
 }
 
@@ -331,36 +359,54 @@ vector<string> listScheduleHelper(Graph& gcopy, char a, int cycle){
         throw "No schedule possible";
 
     for(int i = 0; i < min(quantity.at(a), (int)ready.size()); i++){
-        resource_num.insert(pair<string,int>(ready.at(i), i));
+        resource_num.insert(pair<string,int>(ready.at(i), i+1));
         selected.push_back(ready.at(i));
         schedule.insert(pair<string,int>(ready.at(i), cycle));
+        last_cycle = max(last_cycle, cycle + delay.at(a));
         cout << "Given schedule " << cycle << " to " << ready.at(i) << endl;
     }
 
     return selected;
-
 }
 
-void removeVertices(vector<string> remove){
+bool removeVertices(Graph& gr, vector<string> remove){
+    cout << "removing ";
+    sort(V.begin(), V.end());
+    sort(remove.begin(), remove.end());
+    vector<string> difference;
+    std::set_difference(
+        V.begin(), V.end(),
+        remove.begin(), remove.end(),
+        std::back_inserter( difference )
+    );
+    V = difference; cout << V.size() << endl;
     for(int i = 0; i < remove.size(); i++){
-        remove_vertex(remove.at(i), g);
-        V.erase(std::remove(V.begin(), V.end(), remove.at(i)), V.end());
-        for(int j = 0; j < E.size(); j++){
-            if(E.at(j).first == remove.at(i) || E.at(j).second == remove.at(i))
-                E.erase(E.begin() + j);
-        }
+        cout << remove.at(i) << " ";
+        gr.remove_vertex(remove.at(i));        
+    }    
+    vector<pair<string,string>> Etemp;
+    for(int j = 0; j < E.size(); j++){
+        if(find(V.begin(), V.end(), E.at(j).first) != V.end() && find(V.begin(), V.end(), E.at(j).second) != V.end())
+            Etemp.push_back(E.at(j));
     }
+    E = Etemp;
+    cout << endl;
+    return V.size() == 1;
 }
 
 void listSchedule(){
     int cycle = 1;
     vector<string> remove;
+    int limit = 1;
+    bool done;
 
-    while(num_vertices(g) != 0){
+    while(limit != 0 || !done){
+        Graph g;
+        parseGraph(g, "graph2.txt");
         printGraph();
-        ASAP();
+        ASAP(g);
         printASAP();
-        ALAP();
+        ALAP(g);
         printALAP();
         computeMobilities();
         remove.clear();
@@ -368,21 +414,28 @@ void listSchedule(){
             vector<string> r = listScheduleHelper(g, a, cycle);
             remove.insert(remove.end(), r.begin(), r.end());
         }
-        removeVertices(remove);
-        cycle++;
+        done = removeVertices(g, remove);
+        if(done){
+            schedule.insert(pair<string, int>(V.at(0), last_cycle));
+            resource_num.insert(pair<string,int>(V.at(0), 1));
+            break;
+        }
+        writeGraph("graph2.txt");
+        cycle = last_cycle;
+        limit = num_vertices(g);
     }    
 }
 
 int main(int argc, char** argv){
 
+    if(argc > 1)
+        std::cout.setstate(std::ios_base::failbit);
     parseInput();
-    parseGraph(g);
-    ASAP();
-    printASAP();
-    ALAP();
-    printALAP();
-    computeMobilities();
-    printMobilities();
+    parseGraph(g, "graph.txt");
+    writeGraph("graph2.txt");
     listSchedule();
+    parseGraph(g, "graph.txt");
+    std::cout.clear();
+    printSchedule();
 
 }
