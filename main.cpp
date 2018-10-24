@@ -32,7 +32,6 @@ SOFTWARE.
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/labeled_graph.hpp>
-#include <boost/graph/graphviz.hpp>
 #include <boost/graph/graph_utility.hpp>
 
 using namespace boost;
@@ -50,7 +49,6 @@ class Node
 
 typedef labeled_graph<adjacency_list<listS, vecS, bidirectionalS, Node>, string> Graph;
 typedef adjacency_list<listS, vecS, bidirectionalS, Node> AdjGraph;
-// typedef adjacency_list<listS, vecS, directedS, Node> Graph;
 typedef graph_traits<Graph>::vertex_descriptor vertex_t;
 typedef graph_traits<Graph>::vertex_iterator vertex_iter;
 typedef graph_traits<Graph>::edge_descriptor edge_t;
@@ -60,6 +58,39 @@ map <char, int> delay;
 map <char, int> quantity;
 vector <string> V;
 vector <pair<string,string>> E;
+Graph g;
+
+void printVertices(){
+    for(int i = 0; i < V.size(); i++)
+        cout << V.at(i) << endl;
+}
+
+void printEdges(){
+    for(int i = 0; i < E.size(); i++)
+        cout << E.at(i).first << " " << E.at(i).second << " " << endl;
+}
+
+void printGraph(){
+    cout << "GRAPH : " << endl;
+    printVertices(); 
+    printEdges();
+}
+
+void printInDegrees(){
+    AdjGraph& underlying = g.graph();
+    typedef property_map<Graph, vertex_index_t>::type IndexMap;
+    IndexMap index = get(vertex_index, underlying);
+
+    pair<vertex_iter, vertex_iter> vp;
+    for (vp = vertices(underlying); vp.first != vp.second; ++vp.first) {
+        cout << "Indegree of : " << V.at((int)index[*vp.first]) << " = " << in_degree(*vp.first, underlying) << endl;
+    }
+
+    /*
+    For iterating over all vertices use vertex iterator and index[*vp.first] for index in V
+    For iterating over all edges use E
+    */
+}
 
 void parseGraph(Graph &graph){
     ifstream graphFile("graph.txt");
@@ -93,27 +124,7 @@ void parseGraph(Graph &graph){
         add_edge_by_label(ss.str(), ss1.str(), graph);
     }
 
-    cout << "GRAPH : " << endl;
-    for(int i = 0; i < V.size(); i++)
-        cout << V.at(i) << endl;
-    cout << endl;
-    for(int i = 0; i < E.size(); i++)
-        cout << E.at(i).first << " " << E.at(i).second << " " << endl;
-
-    AdjGraph& underlying = graph.graph();
-    typedef property_map<Graph, vertex_index_t>::type IndexMap;
-    IndexMap index = get(vertex_index, underlying);
-
-    pair<vertex_iter, vertex_iter> vp;
-    for (vp = vertices(underlying); vp.first != vp.second; ++vp.first) {
-        cout << "Indegree of : " << V.at((int)index[*vp.first]) << " = " << in_degree(*vp.first, underlying) << endl;
-    }
-
-    /*
-    For iterating over all vertices use vertex iterator and index[*vp.first] for index in V
-    For iterating over all edges use E
-    */
-
+    printGraph();
     graphFile.close();
 }
 
@@ -132,8 +143,6 @@ void parseInput(){
 }
 
 int main(int argc, char** argv){
-
-    Graph g;
 
     parseInput();
     parseGraph(g);
