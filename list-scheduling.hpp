@@ -58,10 +58,12 @@ map <string, int> mobility;
 map <string, int> schedule;
 map <string, int> resource_num;
 int critical_path_length = 1;
-int last_cycle = 1;
 vector <string> V;
 vector <pair<string,string>> E;
+vector <pair<string,string>> E_original;
 Graph g;
+Graph g_original;
+int last_cycle = 1;
 
 struct mobilityComparator{
     bool operator ()(const string s, const string s1){

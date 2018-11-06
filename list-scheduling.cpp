@@ -114,7 +114,7 @@ void ALAP(Graph& g){
             if(find(Vtemp.begin(), Vtemp.end(), V.at((int)index[*vp.first])) == Vtemp.end())
                 continue;
             bool all_succ_scheduled = true;
-            vertex_t v = *vp.first; int minStart;
+            vertex_t v = *vp.first; int minStart = critical_path_length;
             cout << "checking vertex : " << V.at((int)index[*vp.first]) << endl;
             for(tie(out_i, out_end) = out_edges(v, g); out_i != out_end; ++out_i){
                 e = *out_i;
@@ -220,7 +220,16 @@ void printInDegrees(){
     */
 }
 
+bool inDegZero(string node){
+    for(int i = 0; i < E_original.size(); i++){
+        if(E_original.at(i).second == node)
+            return false;
+    }
+    return true;
+}
+
 void parseGraph(Graph &graph, string file){
+    cout << "Parsing graph\n";
     ifstream graphFile(file);
     V.clear();
     E.clear();
@@ -262,6 +271,7 @@ void parseGraph(Graph &graph, string file){
         graphFile.close();
         return;
     }
+    E_original = E;
     V.push_back("C0");
     add_vertex("C0", graph);
     AdjGraph& underlying = graph.graph();
@@ -278,6 +288,7 @@ void parseGraph(Graph &graph, string file){
 
     // printGraph();
     graphFile.close();
+    cout << "Parsing complete\n";
 }
 
 void parseInput(){
@@ -298,7 +309,6 @@ void parseInput(){
 }
 
 vector<string> readyList(Graph& gr, char type){
-    // cout << "ready list for " << type << endl;
     list<string> list;
 
     AdjGraph& underlying = gr.graph();
@@ -317,11 +327,10 @@ vector<string> readyList(Graph& gr, char type){
 
     list.sort(mobilityComparator());
     vector<string> v{list.begin(), list.end()};
-    // cout << "ready list done\n";
     return v;
 }
 
-vector<string> listScheduleHelper(Graph& gcopy, char a, int cycle){
+vector<string> listScheduleHelper(Graph& gcopy, char a){
     vector<string> ready = readyList(gcopy, a);
     vector<string> selected;
 
@@ -331,14 +340,20 @@ vector<string> listScheduleHelper(Graph& gcopy, char a, int cycle){
             num_critical++;
     }
 
-    if(num_critical > quantity.at(a))
-        throw "No schedule possible";
-
     for(int i = 0; i < min(quantity.at(a), (int)ready.size()); i++){
+        cout << ready.at(i) << endl;
         resource_num.insert(pair<string,int>(ready.at(i), i+1));
         selected.push_back(ready.at(i));
+        int cycle = (inDegZero(ready.at(i))) ? last_cycle : 1;
+        cout << "Start cycle : " << cycle << endl;
+        // Determine last cycle of parents
+        for(int j = 0; j < E_original.size(); j++){
+            auto p = E_original.at(j);
+            if(p.second == ready.at(i) && schedule.find(p.first) != schedule.end())
+                cycle = max(cycle, schedule.at(p.first) + delay.at(p.first.at(0)));
+        }
         schedule.insert(pair<string,int>(ready.at(i), cycle));
-        last_cycle = max(last_cycle, cycle + delay.at(a));
+        last_cycle = max(last_cycle, cycle);
         cout << "Given schedule " << cycle << " to " << ready.at(i) << endl;
     }
 
@@ -385,19 +400,19 @@ void listSchedule(){
         ALAP(g);
         printALAP();
         computeMobilities();
+        printMobilities();
         remove.clear();
         for(char a : {'C', 'A', 'S', 'M', 'R', 'W'}){
-            vector<string> r = listScheduleHelper(g, a, cycle);
-            remove.insert(remove.end(), r.begin(), r.end());
+            vector<string> r = listScheduleHelper(g, a);
+            remove.insert(std::end(remove), std::begin(r), std::end(r));
         }
         done = removeVertices(g, remove);
         if(done){
-            schedule.insert(pair<string, int>(V.at(0), last_cycle));
+            schedule.insert(pair<string, int>(V.at(0), 0));
             resource_num.insert(pair<string,int>(V.at(0), 1));
             break;
         }
         writeGraph("graph2.txt");
-        cycle = last_cycle;
         limit = num_vertices(g);
     }    
 }

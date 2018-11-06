@@ -1,2 +1,2 @@
 make
-run.exe 1
+run.exe
